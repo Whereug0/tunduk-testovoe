@@ -34,7 +34,6 @@ export interface UpdateStatusResult {
   status: CandidateStatus
 }
 
-/** Simulates PATCH /api/candidates/:id/status with a chance of failure, for optimistic-update rollback testing. */
 export async function updateCandidateStatus(
   id: string,
   status: CandidateStatus,

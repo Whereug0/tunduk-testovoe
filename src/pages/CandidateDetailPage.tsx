@@ -32,7 +32,6 @@ export function CandidateDetailPage() {
     if (candidates.length === 0) {
       void loadCandidates()
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const candidate = candidates.find((c) => c.id === id)

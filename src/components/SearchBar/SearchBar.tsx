@@ -10,9 +10,6 @@ export function SearchBar({ value, onChange }: SearchBarProps) {
   const [raw, setRaw] = useState(value)
   const [prevValue, setPrevValue] = useState(value)
 
-  // Adjust local state during render when the URL-driven value changes externally
-  // (e.g. browser back/forward or a "reset filters" action), per React's
-  // recommended pattern for syncing state to a changed prop without an effect.
   if (value !== prevValue) {
     setPrevValue(value)
     setRaw(value)

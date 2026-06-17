@@ -12,10 +12,8 @@ export function useCandidates() {
   const statusUpdating = useCandidatesStore((s) => s.statusUpdating)
   const { filters, setVerdict, setSearch, setSort, setPage, resetFilters } = useCandidateFilters()
 
-  // Deliberately excludes `filters.page` so paginating doesn't re-run the filter/sort pass.
   const filtered = useMemo(
     () => filterAndSortCandidates(candidates, filters),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [candidates, filters.verdict, filters.search, filters.sortField, filters.sortDirection],
   )
 

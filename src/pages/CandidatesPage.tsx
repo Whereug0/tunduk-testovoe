@@ -36,7 +36,6 @@ export function CandidatesPage() {
 
   useEffect(() => {
     void loadCandidates()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   return (
