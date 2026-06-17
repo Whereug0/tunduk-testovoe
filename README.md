@@ -1,73 +1,64 @@
-# React + TypeScript + Vite
+# Candidate Dashboard — CV-Scan
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Тестовое задание (React Middle): дашборд для HR-специалиста — список кандидатов с фильтрацией/поиском/сортировкой/пагинацией, детальная карточка кандидата и управление статусом обработки резюме.
 
-Currently, two official plugins are available:
+## Стек
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **React 19** + **TypeScript** (без `any`)
+- **Vite** — сборка и dev-сервер
+- **Zustand** — состояние кандидатов и тост-уведомлений
+- **React Router v7** — маршрутизация, фильтры синхронизированы с query-параметрами URL
+- **Tailwind CSS v4** — стилизация
+- **Jest + React Testing Library** — тесты
+- **react-window** — виртуализация списка (задание 5)
 
-## React Compiler
+## Запуск
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
+npm run dev        # http://localhost:5173
+npm run test       # тесты (Jest + RTL)
+npm run build      # продакшен-сборка (tsc -b && vite build)
+npm run lint        # ESLint
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Моки лежат в `mock/` (источник) и зеркалируются в `public/mock/` (раздаются dev/prod сервером по `/mock/*.json`, имитируя реальный API-эндпоинт).
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Структура проекта
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
 ```
+src/
+├── components/
+│   ├── CandidateCard/        # карточка кандидата в списке
+│   ├── CandidateDetail/      # блоки детальной страницы (контакты, опыт, критерии, статус и т.д.)
+│   ├── CandidateList/        # обычный грид + VirtualizedCandidateList (react-window)
+│   ├── FilterPanel/          # фильтр по вердикту + сортировка
+│   ├── SearchBar/            # поиск с debounce 300ms
+│   ├── StatusBadge/          # цветовой бейдж статуса
+│   └── UI/                   # переиспользуемые примитивы (Pagination, Spinner, EmptyState, Toast, SegmentedControl)
+├── store/                    # candidatesStore (Zustand) + toastStore
+├── pages/                    # CandidatesPage, CandidateDetailPage, NotFoundPage
+├── services/                 # api.ts (мок PATCH/GET с задержкой и имитацией ошибок), mockData.ts
+├── hooks/                    # useDebounce, useCandidateFilters (URL), useCandidates (фильтр/сортировка/пагинация)
+├── types/                    # candidate.ts — доменные типы
+├── utils/                    # filterCandidates.ts (чистая функция), helpers.ts (цвета/лейблы/аватары)
+├── routes.tsx, App.tsx, main.tsx
+└── __tests__/                # unit + integration тесты
+```
+
+## Принятые решения и компромиссы
+
+- **Состояние фильтров — в URL, а не в отдельном Zustand-стора.** `useCandidateFilters` читает/пишет `useSearchParams` напрямую. Это даёт единственный источник правды (без риска рассинхронизации стора и URL) и бесплатную поддержку back/forward и шаринга ссылок. Zustand используется только для «серверных» данных: список кандидатов, loading/error, статус обновления каждого кандидата.
+- **Debounce без лишних ререндеров.** `SearchBar` хранит «сырое» значение инпута локально и эмитит наружу (в URL) только финальное значение через 300ms — список фильтруется/сортируется только один раз на завершённый ввод, а не на каждое нажатие клавиши.
+- **Реальные данные вместо рандомной заглушки.** В `mock/candidates.json` (25) и `mock/candidates-large.json` (120) вердикт — `ПОДХОДИТ | ЧАСТИЧНО | НЕ СООТВЕТСТВУЕТ`, а статус кандидата хранится кодом (`new | review | invited | rejected`) и отображается русской меткой через `STATUS_LABELS` в `utils/helpers.ts`. Поля `phone`/`city` у части кандидатов — `null`, в UI это обработано (`—`, «Город не указан»).
+- **Optimistic update статуса.** При смене статуса UI обновляется мгновенно, запрос `updateCandidateStatus` идёт с задержкой ~500ms и случайно (15%) завершается ошибкой — это сделано намеренно, чтобы продемонстрировать rollback состояния и error-toast.
+- **Виртуализация — отдельный режим просмотра**, переключаемый рядом с переключателем датасета (25/120), а не замена пагинации: так на одном экране можно сравнить оба подхода и показать, что пагинация по-прежнему корректно работает на 120 записях (12 страниц по 10).
+- **Jest вместо Vitest**, хотя проект на Vite — по условиям задания. Настроен через `babel-jest` (а не `ts-jest`), тестовые файлы исключены из `tsc -b` (продакшен-сборки) и типизируются отдельно через `tsconfig.test.json`, чтобы не тащить ambient Jest-типы в основной билд.
+- **Найденный и исправленный баг:** в исходном `index.css` был не обёрнутый в `@layer` глобальный ресет (`* { margin: 0; padding: 0 }`), который в CSS cascade layers всегда побеждает любые Tailwind-утилиты независимо от specificity — из-за этого все `p-*`/`m-*`-классы не работали. Исправлено оборачиванием в `@layer base`.
+
+## Что не успели / можно улучшить
+
+- Тесты покрывают ключевые сценарии (фильтрация, debounce, цветовая индикация, навигация, edge cases), но не доведены до >70% покрытия всего кода.
+- Нет полноценного a11y-аудита (только базовые `aria-*`/`role` атрибуты и keyboard-доступные контролы).
+- React Query не подключали — для текущего объёма мок-API хватило Zustand + сервис-слоя.
+- Нет CI-пайплайна (GitHub Actions) для автоматического прогона lint/test/build.
