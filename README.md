@@ -22,8 +22,6 @@ npm run build      # продакшен-сборка (tsc -b && vite build)
 npm run lint        # ESLint
 ```
 
-Моки лежат в `mock/` (источник) и зеркалируются в `public/mock/` (раздаются dev/prod сервером по `/mock/*.json`, имитируя реальный API-эндпоинт).
-
 ## Структура проекта
 
 ```
